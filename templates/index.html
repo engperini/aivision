@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Assistente com Voz e Visão</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h1>Assistente com Voz e Visão</h1>
+    <video id="localVideo" autoplay muted></video>
+    <button id="talkButton">Falar</button>
+    <p id="status"></p>
+    <audio id="responseAudio" controls></audio>
+    <img id="responseImage" src="" alt="Imagem de resposta" style="display:none; max-width: 300px;"/>
+    
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
