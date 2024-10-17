@@ -282,4 +282,5 @@ if __name__ == '__main__':
     # Certifique-se de que a pasta 'captured_images' existe
     if not os.path.exists('captured_images'):
         os.makedirs('captured_images')
+    #app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=('cert.pem', 'key.pem'))
     app.run(host='0.0.0.0', port=5000, debug=True)

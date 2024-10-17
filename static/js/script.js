@@ -112,3 +112,4 @@ const sendData = async () => {
         status.textContent = 'Erro ao enviar dados para o servidor.';
     }
 };
+

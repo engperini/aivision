@@ -1,31 +1,37 @@
-body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin: 20px;
+/* styles.css */
+
+/* Ajustes para o vídeo */
+#localVideo {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    background-color: #000;
 }
 
-video, audio, img {
-    margin-top: 20px;
-    border: 1px solid #ccc;
+/* Spinner */
+#spinner {
+    margin-top: 10px;
 }
 
-button {
-    margin: 10px;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-button:active {
-    background-color: #ddd;
-}
-
+/* Status */
 #status {
-    margin-top: 20px;
-    font-weight: bold;
+    font-size: 1.1rem;
 }
 
-button#talkButton.recording {
-    background-color: #ff4d4d;
-    color: white;
+/* Imagem de resposta */
+#responseImage {
+    max-height: 300px;
+}
+
+/* Opções adicionais para melhorar a aparência */
+body {
+    background-color: #f8f9fa; /* Cor de fundo suave */
+}
+
+h1 {
+    color: #343a40; /* Cor escura para o título */
+}
+
+#talkButton {
+    transition: background-color 0.3s, border-color 0.3s; /* Suaviza a transição das cores */
 }
