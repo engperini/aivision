@@ -11,6 +11,7 @@ import requests
 import logging
 from functools import wraps
 import json
+from functions_actions import websearch
 
 # Configurar o logging
 logging.basicConfig(level=logging.INFO)
@@ -119,14 +120,6 @@ def handle_errors(f):
             logger.error(f"Erro na rota {request.path}: {e}")
             return jsonify({"error": "Ocorreu um erro no servidor."}), 500
     return decorated_function
-
-# Funções disponíveis para o ChatGPT
-def websearch(query):
-    # Implementação da função de busca na web
-    # Exemplo simples usando Google Search API ou similar
-    # Aqui, vamos apenas retornar uma resposta fictícia
-    # Substitua com a lógica real de busca
-    return f"Resultados da busca para '{query}'. (Implementar lógica de busca real)"
 
 # Rota para servir a página principal
 @app.route('/')

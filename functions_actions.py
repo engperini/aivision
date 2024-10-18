@@ -2,10 +2,11 @@
 import openai
 import json, os
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(dotenv_path=".env.local")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 wheather_api_key = os.getenv("OPENWEATHER_API_KEY")
 search_api = os.getenv("apikey_search")
+
 import requests
 
 
@@ -124,8 +125,8 @@ def search_serpapi(query):
 import requests
 import json
 
-CS_API_KEY = 'AIzaSyC7V1_pJabxhhmiPafAmVvPHARwDeGBzA0'
-CS_CX = 'a0d6bbcabc7754d5f'
+CS_API_KEY = os.getenv("CS_API_KEY")
+CS_CX = os.getenv("CS_CX")
 
 from googleapiclient.discovery import build
 
