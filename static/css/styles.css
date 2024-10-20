@@ -1,37 +1,105 @@
-/* styles.css */
+/* General styles */
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f4f4f4;
+}
 
-/* Ajustes para o vídeo */
+/* Container for the main content */
+#container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+/* Video container */
 #localVideo {
     width: 100%;
+    max-width: 600px;
     height: auto;
-    max-height: 400px;
+    border-radius: 10px;
     background-color: #000;
+    margin-bottom: 20px;
 }
 
 /* Spinner */
 #spinner {
-    margin-top: 10px;
+    margin-top: 20px;
 }
 
 /* Status */
 #status {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    text-align: center;
 }
 
 /* Imagem de resposta */
 #responseImage {
+    max-width: 100%;
     max-height: 300px;
+    border-radius: 10px;
+    margin-bottom: 20px;
 }
 
-/* Opções adicionais para melhorar a aparência */
-body {
-    background-color: #f8f9fa; /* Cor de fundo suave */
+/* Chat container */
+#chat-container {
+    width: 100%;
+    max-width: 600px;
+    height: 300px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    overflow-y: auto;
+    margin-bottom: 20px;
 }
 
-h1 {
-    color: #343a40; /* Cor escura para o título */
+.user-message, .bot-message {
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
 }
 
+.user-message {
+    background-color: #e0f7fa;
+    text-align: right;
+}
+
+.bot-message {
+    background-color: #f0f4c3;
+}
+
+/* Talk button */
 #talkButton {
-    transition: background-color 0.3s, border-color 0.3s; /* Suaviza a transição das cores */
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+#talkButton:hover {
+    background-color: #45a049;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    #container {
+        padding: 10px;
+    }
+
+    #localVideo, #chat-container {
+        max-width: 100%;
+    }
+
+    #responseImage {
+        max-width: 100%;
+    }
 }

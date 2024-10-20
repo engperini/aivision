@@ -22,13 +22,36 @@
                 </div>
             </div>
         </div>
-
+     
         <div class="row justify-content-center mt-4">
             <div class="col-md-6 text-center">
                 <audio id="responseAudio" controls class="w-100 mb-3"></audio>
                 <img id="responseImage" src="" alt="Imagem de resposta" class="img-fluid rounded shadow" style="display:none;">
             </div>
         </div>
+
+        <div id="chat-container" class="shadow rounded p-3 mb-3">
+            <!-- Chat messages will be added here -->
+            <template id="user-message-template">
+                <div class="user-message mb-2">
+                    <span class="message-text"></span>
+                </div>
+            </template>
+         
+            <template id="bot-message-template">
+                <div class="bot-message mb-2">
+                    <span class="message-text"></span>
+                </div>
+            </template>
+         
+        </div>
+
+        <div class="input-group mb-3">
+            <input type="text" id="text-input" class="form-control" placeholder="Digite sua mensagem...">
+            <button id="send-button" class="btn btn-primary">Enviar</button>
+        </div>
+
+
     </div>
 
     <!-- Bootstrap JS e Dependências (Popper.js) -->

@@ -85,6 +85,9 @@ const sendData = async () => {
 
         const data = await response.json();
         status.textContent = 'Resposta recebida do servidor.';
+        
+        // Display bot's response in chat
+        displayBotMessage(data.response); 
 
         // Reproduz o áudio de resposta
         if (data.audio) {
@@ -113,3 +116,16 @@ const sendData = async () => {
     }
 };
 
+function displayUserMessage(message) {
+    const template = document.getElementById('user-message-template');
+    const messageElement = template.content.cloneNode(true);
+    messageElement.querySelector('.message-text').textContent = message;
+    document.getElementById('chat-container').appendChild(messageElement);
+}
+
+function displayBotMessage(message) {
+    const template = document.getElementById('bot-message-template');
+    const messageElement = template.content.cloneNode(true);
+    messageElement.querySelector('.message-text').textContent = message;
+    document.getElementById('chat-container').appendChild(messageElement);
+}
