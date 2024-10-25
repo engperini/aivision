@@ -3,8 +3,6 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
 from deepgram import DeepgramClient, PrerecordedOptions, FileSource
-import openai
-import cv2
 import base64
 from io import BytesIO
 import requests
@@ -12,6 +10,7 @@ import logging
 from functools import wraps
 import json
 from functions_actions import websearch
+from openai import OpenAI
 
 # Configurar o logging
 logging.basicConfig(level=logging.INFO)
@@ -28,8 +27,6 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 deepgram = DeepgramClient(DEEPGRAM_API_KEY)
 
 # Inicializa OpenAI
-from openai import OpenAI
-
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Inicializa Flask
@@ -41,7 +38,7 @@ chat_context = [
     {
         "role": "system",
         "content": (
-            "Seu nome é Alloy. Você é um bot engraçado e espirituoso. Sua interface com os usuários inclui capacidades de voz e visão. "
+            "Seu nome é Alloy. Você é um bot engraçado e espirituoso, que consegue ver imagens, consegue identificar objetos em imagens, ver camera, ler textos em imagens e trabalhar com todo tipo de imagem. Sua interface com os usuários inclui capacidades de voz e visão. "
             "Sempre que um usuário pedir para 'ver', 'usar a câmera', 'olhar para', 'analisar', 'ler' algo visualmente, ou qualquer coisa que exija percepção visual, você deve utilizar suas capacidades de visão. Sim, você pode usar a câmera quando necessário. "
             "Responda com respostas curtas e concisas. Evite usar pontuação inpronunciável ou emojis."
         )
@@ -100,7 +97,7 @@ def transcribe_audio(audio_bytes, mimetype='audio/wav', language='pt-BR'):
         response = deepgram.listen.prerecorded.v("1").transcribe_file(payload, options)
 
         # Log detalhado da resposta
-        logger.info(f"Resposta da Deepgram: {response}")
+        #logger.info(f"Resposta da Deepgram: {response}")
 
         # Extrai o transcript
         transcript = response['results']['channels'][0]['alternatives'][0]['transcript']
@@ -109,6 +106,7 @@ def transcribe_audio(audio_bytes, mimetype='audio/wav', language='pt-BR'):
     except Exception as e:
         logger.error(f"Erro na transcrição com Deepgram: {e}")
         return None
+
 
 # Decorador para tratar erros
 def handle_errors(f):
@@ -137,24 +135,13 @@ def process():
     audio_file = request.files['audio']
     audio_bytes = audio_file.read()
 
-    video_frame = None
+    #video_frame = None #somente se necessario tratar video
     if 'video' in request.files:
         video_file = request.files['video']
-        # Salva o vídeo temporariamente
-        video_path = 'temp_video.mp4'
-        video_file.save(video_path)
-        # Captura o primeiro frame
-        cap = cv2.VideoCapture(video_path)
-        ret, frame = cap.read()
-        if ret:
-            video_frame = frame
-            # Salva a imagem capturada em uma pasta específica
-            captured_images_path = 'captured_images/captured_image.jpg'
-            cv2.imwrite(captured_images_path, frame)
-            logger.info("Imagem capturada e salva.")
-        cap.release()
-        os.remove(video_path)
 
+        video_file.save('captured_images/captured_image.jpg')
+        logger.info("Imagem salva direto do navegador.")
+        
     # Transcreve o áudio usando Deepgram
     transcript = transcribe_audio(audio_bytes, mimetype='audio/wav', language='pt-BR')
     if not transcript:
@@ -162,11 +149,35 @@ def process():
         return jsonify({"error": "Erro na transcrição de áudio"}), 500
     logger.info(f"Texto transcrito: {transcript}")
 
+    chat_context.append({"role": "user", "content": transcript})
+
     # Verifica palavras-chave para utilizar a visão
     keywords = ["ver", "olhar", "foto", "câmera", "imagem", "cam", "ler", "visão", "cena", "picture"]
     use_image = any(keyword in transcript.lower() for keyword in keywords)
+    #todo implantar function calling e associar com condicional de keywords
 
-    chat_context.append({"role": "user", "content": transcript})
+    if use_image:
+        # Converte a imagem para base64
+        with open('captured_images/captured_image.jpg', 'rb') as img_file:
+            encoded_image = base64.b64encode(img_file.read()).decode('utf-8')
+        chat_context.append({
+            "role": "user",
+            "content": [
+                {
+                "type": "image_url",
+                "image_url": {
+                    "url":  f"data:image/jpeg;base64,{encoded_image}"
+                },
+                },
+            ],
+        })
+        
+
+        # Remove a imagem após o envio (ou mantem a imagem para debug)
+        #os.remove('captured_images/captured_image.jpg')
+        logger.info("Imagem incluída no chat.")
+
+
 
     # Chama a API do ChatGPT com funções
     try:
@@ -255,14 +266,7 @@ def process():
         "text": reply
     }
 
-    if use_image and video_frame is not None:
-        # Converte a imagem para base64
-        with open('captured_images/captured_image.jpg', 'rb') as img_file:
-            encoded_image = base64.b64encode(img_file.read()).decode('utf-8')
-        response_data["image"] = encoded_image
-        # Remove a imagem após o envio
-        os.remove('captured_images/captured_image.jpg')
-        logger.info("Imagem incluída na resposta.")
+
 
     # Converte o áudio para base64
     encoded_audio = base64.b64encode(tts_audio).decode('utf-8')
