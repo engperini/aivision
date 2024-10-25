@@ -1,0 +1,9 @@
+Flask
+Flask-Cors
+python-dotenv
+deepgram-sdk
+openai
+opencv-contrib-python-headless
+requests
+google-search-results
+google-api-python-client
