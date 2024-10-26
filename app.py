@@ -183,20 +183,21 @@ def process():
     try:
         # Define as funções que o ChatGPT pode chamar
         functions = [
-            {
+                        {
                 "name": "websearch",
-                "description": "Use útil para responder perguntas sobre eventos recentes. Não use para perguntas gerais.",
+                "description": "Use esta função para responder perguntas que requerem informações atualizadas da internet, como eventos recentes, agendas de eventos e informações sobre o dia atual ou datas futuras.",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "Consulta para buscar na web, ex.: quem ganhou o US Open este ano?, notícias recentes sobre este assunto"
+                            "description": "Consulta para buscar na web, ex.: quem ganhou o US Open este ano?, noticias hoje?, me atualize de determinado assunto, quais os próximos shows do artista X?"
                         },
                     },
                     "required": ["query"],
                 },
             },
+
         ]
 
         response_chat = client.chat.completions.create(
@@ -279,5 +280,5 @@ if __name__ == '__main__':
     # Certifique-se de que a pasta 'captured_images' existe
     if not os.path.exists('captured_images'):
         os.makedirs('captured_images')
-    #app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=('cert.pem', 'key.pem'))
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='192.168.0.21', port=5000, debug=True, ssl_context=('cert.pem', 'key.pem'))
+    #app.run(host='0.0.0.0', port=5000, debug=True)
