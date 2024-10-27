@@ -35,20 +35,24 @@
             <template id="user-message-template">
                 <div class="user-message mb-2">
                     <span class="message-text"></span>
+                    <span class="timestamp text-muted small"></span>
                 </div>
             </template>
          
             <template id="bot-message-template">
                 <div class="bot-message mb-2">
                     <span class="message-text"></span>
+                    <span class="timestamp text-muted small"></span>
                 </div>
             </template>
          
         </div>
 
-        <div class="input-group mb-3">
-            <input type="text" id="text-input" class="form-control" placeholder="Digite sua mensagem...">
-            <button id="send-button" class="btn btn-primary">Enviar</button>
+        <div class="input-container"></div>
+            <div class="input-group mb-3">
+                <input type="text" id="text-input" class="form-control" placeholder="Digite sua mensagem...">
+                <button id="send-button" class="btn btn-primary">Enviar</button>
+            </div>
         </div>
 
 
