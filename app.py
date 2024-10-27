@@ -126,29 +126,42 @@ def index():
 @app.route('/process', methods=['POST'])
 @handle_errors
 def process():
-    if 'audio' not in request.files:
-        logger.warning("Áudio não encontrado na requisição.")
-        return jsonify({"error": "Áudio não encontrado"}), 400
-    audio_file = request.files['audio']
-    audio_bytes = audio_file.read()
+    if 'audio' in request.files:
 
+        audio_file = request.files['audio']
+        audio_bytes = audio_file.read()
+         # Transcreve o áudio usando Deepgram
+        transcript = transcribe_audio(audio_bytes, mimetype='audio/wav', language='pt-BR')
+        if not transcript:
+            logger.error("Erro na transcrição de áudio.")
+            return jsonify({"error": "Erro na transcrição de áudio"}), 500
+        logger.info(f"Texto transcrito: {transcript}")
+
+        chat_context.append({"role": "user", "content": transcript})
+
+        # Verifica palavras-chave para utilizar a visão
+        keywords = ["ver", "olhar", "foto", "câmera", "imagem", "cam", "ler", "visão", "cena", "picture"]
+        use_image = any(keyword in transcript.lower() for keyword in keywords)
+
+    elif 'text' in request.form:  # Verifica se há texto na requisição (sem arquivos)
+        text = request.form['text']
+        logger.info(f"Texto recebido: {text}")
+        chat_context.append({"role": "user", "content": text})
+        
+        # Verifica palavras-chave para utilizar a visão
+        keywords = ["ver", "olhar", "foto", "câmera", "imagem", "cam", "ler", "visão", "cena", "picture"]
+        use_image = any(keyword in text.lower() for keyword in keywords)
+    
+    else:
+        logger.warning("Requisição inválida: nem áudio, nem texto.")
+        return jsonify({"error": "Requisição inválida"}), 400
+    
     if 'video' in request.files:
         video_file = request.files['video']
         video_file.save('captured_images/captured_image.jpg')
         logger.info("Imagem salva direto do navegador.")
         
-    # Transcreve o áudio usando Deepgram
-    transcript = transcribe_audio(audio_bytes, mimetype='audio/wav', language='pt-BR')
-    if not transcript:
-        logger.error("Erro na transcrição de áudio.")
-        return jsonify({"error": "Erro na transcrição de áudio"}), 500
-    logger.info(f"Texto transcrito: {transcript}")
 
-    chat_context.append({"role": "user", "content": transcript})
-
-    # Verifica palavras-chave para utilizar a visão
-    keywords = ["ver", "olhar", "foto", "câmera", "imagem", "cam", "ler", "visão", "cena", "picture"]
-    use_image = any(keyword in transcript.lower() for keyword in keywords)
 
     # Define as funções que o ChatGPT pode chamar
     tools = [
@@ -224,6 +237,7 @@ def process():
                     ],
                 })
                 logger.info("Imagem incluída no chat.")
+            
             elif function_name == "websearch":
                 reply = None
                 function_response = websearch(query=function_args.get("query"))
@@ -233,18 +247,24 @@ def process():
                     "name": function_name,
                     "content": function_response,
                 })
-                # Obtém a resposta final do ChatGPT após a função ser chamada
-                second_response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=chat_context
-                )
-                reply = second_response.choices[0].message.content if hasattr(second_response.choices[0].message, 'content') else 'Erro ao obter resposta do assistente.'
-                chat_context.append({"role": "assistant", "content": reply})
-                logger.info(f"Resposta do ChatGPT após chamada de função: {reply}")
+                logger.info("Internet Search used")
+
             else:
                 reply = "Não foi possível processar a solicitação."
                 chat_context.append({"role": "assistant", "content": reply})
                 logger.warning(f"Função chamada não está disponível: {function_name}")
+        
+            
+            #a msg nao esta indo quando usa o texto, todo
+            # Obtém a resposta final do ChatGPT após a função ser chamada
+            second_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=chat_context
+            )
+            reply = second_response.choices[0].message.content if hasattr(second_response.choices[0].message, 'content') else 'Erro ao obter resposta do assistente.'
+            chat_context.append({"role": "assistant", "content": reply})
+            logger.info(f"Resposta do ChatGPT após chamada de função: {reply}")
+        
         else:
             reply = response_message.content if hasattr(response_message, 'content') else 'Erro ao obter resposta do assistente.'
             chat_context.append({"role": "assistant", "content": reply})
