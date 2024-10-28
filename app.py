@@ -126,6 +126,12 @@ def index():
 @app.route('/process', methods=['POST'])
 @handle_errors
 def process():
+    
+    if 'video' in request.files:
+        video_file = request.files['video']
+        video_file.save('captured_images/captured_image.jpg')
+        logger.info("Imagem salva direto do navegador.")
+    
     if 'audio' in request.files:
 
         audio_file = request.files['audio']
@@ -156,10 +162,7 @@ def process():
         logger.warning("Requisição inválida: nem áudio, nem texto.")
         return jsonify({"error": "Requisição inválida"}), 400
     
-    if 'video' in request.files:
-        video_file = request.files['video']
-        video_file.save('captured_images/captured_image.jpg')
-        logger.info("Imagem salva direto do navegador.")
+
         
 
 
@@ -220,7 +223,7 @@ def process():
             function_name = tool_call.function.name
             function_args = json.loads(tool_call.function.arguments)
 
-            if function_name == "use_camera" or use_image:
+            if function_name == "use_camera": # or use_image:
                 reply = None
                 # Converte a imagem para base64
                 with open('captured_images/captured_image.jpg', 'rb') as img_file:
