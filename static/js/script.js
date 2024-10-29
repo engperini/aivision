@@ -41,8 +41,8 @@ talkButton.onclick = async () => {
             recorder.start();
 
             isRecording = true;
-            talkButton.textContent = 'Parar';
-            status.textContent = 'Gravando...';
+            talkButton.textContent = 'Send';
+            status.textContent = 'Recording...';
         } catch (err) {
             console.error('Erro ao acessar dispositivos de mídia:', err);
             status.textContent = 'Erro ao acessar dispositivos de mídia.';
@@ -51,8 +51,8 @@ talkButton.onclick = async () => {
         // Parar Gravação
         recorder.stop();
         isRecording = false;
-        talkButton.textContent = 'Falar';
-        status.textContent = 'Processando sua fala...';
+        talkButton.textContent = 'Talk';
+        status.textContent = 'Recognizing ...';
     }
 };
 

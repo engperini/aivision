@@ -9,73 +9,59 @@ body {
     background-color: #f4f4f4;
 }
 
-/* Container for the main content */
-#container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
+.container {
+    padding: 10px 20px;
 }
 
 /* Video container */
 #localVideo {
-    width: 100%;
-    max-width: 600px;
-    height: auto;
+    max-width: 100%;
     border-radius: 10px;
     background-color: #000;
-    margin-bottom: 20px;
 }
 
-/* Spinner */
-#spinner {
-    margin-top: 20px;
+/* Talk button */
+#talkButton {
+    padding: 8px 16px;
+    font-size: 1rem;
 }
 
 /* Status */
 #status {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-    text-align: center;
+    font-size: 1rem;
+    color: #6c757d;
 }
 
-/* Imagem de resposta */
+/* Spinner */
+#spinner {
+    margin-top: 10px;
+}
+
+/* Response Image */
 #responseImage {
     max-width: 100%;
-    max-height: 300px;
+    max-height: 250px;
     border-radius: 10px;
-    margin-bottom: 20px;
 }
 
 /* Chat container */
 #chat-container {
     width: 100%;
-    max-width: 600px;
-    height: 300px;
+    max-width: 100%;
+    height: 200px;
     border: 1px solid #ccc;
     border-radius: 10px;
     overflow-y: auto;
-    margin: 0 auto 20px; /* centraliza horizontalmente */
-    padding: 10px;
     background-color: #ffffff;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 10px;
 }
-
-.input-container {
-    display: flex;
-    justify-content: center; /* Centraliza horizontalmente */
-    width: 100%;
-    max-width: 600px; /* Define a largura máxima */
-    margin: 0 auto; /* Centraliza na página */
-}
-
 
 .user-message, .bot-message {
-    padding: 10px;
+    padding: 8px;
     margin-bottom: 5px;
     border-radius: 5px;
-    color: #333; /* Cor do texto para garantir visibilidade */
+    font-size: 0.9rem;
 }
 
 .user-message {
@@ -85,43 +71,56 @@ body {
 
 .bot-message {
     background-color: #f8d7da;
-    text-align: left;
 }
 
-.message-text {
-    display: inline;
-    font-size: 1rem; /* Tamanho do texto para garantir legibilidade */
+.timestamp {
+    display: block;
+    font-size: 0.7rem;
+    margin-top: 3px;
 }
 
-
-/* Talk button */
-#talkButton {
-    padding: 10px 20px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s, border-color 0.3s;
+/* Input container */
+.input-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
 }
 
-#talkButton:hover {
-    background-color: #45a049;
+.input-group {
+    width: 100%;
+    max-width: 600px;
 }
 
+#text-input {
+    font-size: 0.9rem;
+}
 
+#send-button {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+}
 
-/* Responsive design */
-@media (max-width: 768px) {
-    #container {
-        padding: 10px;
+/* Mobile adjustments */
+@media (max-width: 576px) {
+    #chat-container {
+        height: 150px;
     }
 
-    #localVideo, #chat-container {
-        max-width: 100%;
+    #talkButton {
+        font-size: 0.9rem;
+        padding: 6px 12px;
     }
 
-    #responseImage {
-        max-width: 100%;
+    .user-message, .bot-message {
+        font-size: 0.85rem;
+    }
+
+    #status {
+        font-size: 0.85rem;
+    }
+
+    #text-input, #send-button {
+        font-size: 0.85rem;
+        padding: 6px;
     }
 }
