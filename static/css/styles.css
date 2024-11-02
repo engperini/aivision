@@ -16,6 +16,7 @@ body {
 /* Video container */
 #localVideo {
     max-width: 100%;
+    max-height: 420px;
     border-radius: 10px;
     background-color: #000;
 }
@@ -91,11 +92,11 @@ body {
     max-width: 600px;
 }
 
-#text-input {
+#sendText {
     font-size: 0.9rem;
 }
 
-#send-button {
+#sendButton {
     font-size: 0.9rem;
     padding: 8px 16px;
 }
@@ -119,7 +120,7 @@ body {
         font-size: 0.85rem;
     }
 
-    #text-input, #send-button {
+    #sendText, #sendButton {
         font-size: 0.85rem;
         padding: 6px;
     }

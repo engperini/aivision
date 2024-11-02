@@ -12,59 +12,6 @@ let recorder = null;
 let isRecording = false;
 let playAudioResponse = true;
 
-// Conexão com o servidor via Socket.IO
-// const socket = io('https://engperini.ddns.net:5505', {
-//     secure: true,
-//     rejectUnauthorized: false
-// });
-
-//const socket = io('192.168.0.21:5000');
-const socket = io('https://engperini.ddns.net:5505');
-
-socket.on('connect', () => {
-    console.log('Conectado ao servidor via Socket.IO');
-    status.textContent = 'Conectado ao servidor.';
-});
-
-socket.on('disconnect', () => {
-    console.log('Desconectado do servidor');
-    status.textContent = 'Desconectado do servidor.';
-});
-
-socket.on('response', (data) => {
-    status.textContent = 'Resposta recebida do servidor.';
-    
-    // Exibe a resposta do bot no chat
-    console.log(data.text);
-    displayBotMessage(data.text); 
-
-    // Reproduz o áudio de resposta
-    if (playAudioResponse && data.audio) {
-        const audioBytes = atob(data.audio);
-        const audioBuffer = new Uint8Array(audioBytes.length);
-        for (let i = 0; i < audioBytes.length; i++) {
-            audioBuffer[i] = audioBytes.charCodeAt(i);
-        }
-        const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
-        const url = URL.createObjectURL(blob);
-        responseAudio.src = url;
-        responseAudio.play();
-    }
-
-    // Exibe a imagem de resposta, se houver
-    if (data.image) {
-        responseImage.src = `data:image/jpeg;base64,${data.image}`;
-        responseImage.style.display = 'block';
-    } else {
-        responseImage.style.display = 'none';
-    }
-});
-
-socket.on('error', (error) => {
-    console.error('Erro recebido do servidor:', error);
-    status.textContent = 'Erro recebido do servidor.';
-});
-
 // Solicita permissão para câmera e microfone ao carregar a página
 window.addEventListener('load', async () => {
     try {
@@ -80,8 +27,8 @@ talkButton.onclick = async () => {
     if (!isRecording) {
         // Iniciar Gravação
         try {
-            //mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            //localVideo.srcObject = mediaStream;
+            mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localVideo.srcObject = mediaStream;
 
             recorder = new MediaRecorder(mediaStream);
             recorder.ondataavailable = event => {
@@ -113,7 +60,7 @@ sendButton.onclick = () => {
     const text = sendText.value;
     if (text.trim() !== "") {
         displayUserMessage(text);
-        sendData(false); // false para não enviar áudio 
+        sendData(false); //false not send audio 
         //sendText.value = ""; 
     }
 };
@@ -127,52 +74,84 @@ const sendData = async (sendAudio) => {
     }
 
     // Captura um frame do vídeo
-    let videoDataUrl = null;
-    if (mediaStream && mediaStream.getVideoTracks().length > 0) {
+    let videoBlob = null;
+    if (mediaStream.getVideoTracks().length > 0) {
         const videoTrack = mediaStream.getVideoTracks()[0];
         const imageCapture = new ImageCapture(videoTrack);
         try {
             const bitmap = await imageCapture.grabFrame();
-            // Converte o frame para DataURL
+            // Converte o frame para blob
             const canvas = document.createElement('canvas');
             canvas.width = bitmap.width;
             canvas.height = bitmap.height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(bitmap, 0, 0);
-            videoDataUrl = canvas.toDataURL('image/jpeg');
+            videoBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
         } catch (err) {
             console.error('Erro ao capturar frame de vídeo:', err);
         }
     }
 
     // Prepara os dados para envio
-    let data = {};
+    const formData = new FormData();
     
     if (sendAudio) {
-        // Converte o áudio em base64
-        const reader = new FileReader();
-        reader.onload = function() {
-            const base64Audio = reader.result; // Data URL do áudio
-            data.audio = base64Audio;
-            if (videoDataUrl) {
-                data.video = videoDataUrl;
-            }
-            sendDataToServer(data);
-        };
-        reader.readAsDataURL(audioBlob);
-    } else {
-        data.text = sendText.value;
-        sendText.value = "";
-        if (videoDataUrl) {
-            data.video = videoDataUrl;
+        formData.append('audio', audioBlob, 'audio.wav');
+    }
+    
+    if (!sendAudio) {
+        console.log(sendText.value)
+        formData.append('text', sendText.value);
+        sendText.value = ""
+    }
+    
+    if (videoBlob) {
+        formData.append('video', videoBlob, 'video.jpg');
+    }
+
+    try {
+        const response = await fetch('/process', {  // Rota relativa
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro na requisição: ${response.statusText}`);
         }
-        sendDataToServer(data);
+
+        const data = await response.json();
+        status.textContent = 'Resposta recebida do servidor.';
+        
+        // Display bot's response in chat
+        console.log(data.text)
+        displayBotMessage(data.text); 
+
+        // Reproduz o áudio de resposta
+        if (playAudioResponse && data.audio) {
+            const audioBytes = atob(data.audio);
+            const audioBuffer = new Uint8Array(audioBytes.length);
+            for (let i = 0; i < audioBytes.length; i++) {
+                audioBuffer[i] = audioBytes.charCodeAt(i);
+            }
+            const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
+            const url = URL.createObjectURL(blob);
+            responseAudio.src = url;
+            responseAudio.play();
+        }
+
+        // Exibe a imagem de resposta, se houver
+        if (data.image) {
+            responseImage.src = `data:image/jpeg;base64,${data.image}`;
+            responseImage.style.display = 'block';
+        } else {
+            responseImage.style.display = 'none';
+        }
+
+    } catch (err) {
+        console.error('Erro ao enviar dados:', err);
+        status.textContent = 'Erro ao enviar dados para o servidor.';
     }
 };
-
-function sendDataToServer(data) {
-    socket.emit('process_data', data);
-}
 
 function displayUserMessage(message) {
     const template = document.getElementById('user-message-template');

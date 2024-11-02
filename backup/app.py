@@ -1,6 +1,4 @@
 import os
-import eventlet
-eventlet.monkey_patch()
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -14,8 +12,6 @@ from functools import wraps
 import json
 from functions_actions import websearch
 from openai import OpenAI
-
-from flask_socketio import SocketIO, emit
 
 # Configurar o logging
 logging.basicConfig(level=logging.INFO)
@@ -37,9 +33,6 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # Inicializa Flask
 app = Flask(__name__)
 CORS(app)  # Permite requisições de outros domínios (para desenvolvimento)
-
-# Inicializa SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Contexto do Chat
 chat_context = [
@@ -119,8 +112,8 @@ def handle_errors(f):
         try:
             return f(*args, **kwargs)
         except Exception as e:
-            logger.error(f"Erro no evento: {e}")
-            emit("error", {"error": "Ocorreu um erro no servidor."})
+            logger.error(f"Erro na rota {request.path}: {e}")
+            return jsonify({"error": "Ocorreu um erro no servidor."}), 500
     return decorated_function
 
 # Rota para servir a página principal
@@ -129,76 +122,49 @@ def handle_errors(f):
 def index():
     return render_template('index.html')
 
-# Evento para conexão de clientes
-@socketio.on('connect')
-def handle_connect():
-    logger.info(f"Cliente conectado: {request.sid}")
-
-# Evento para desconexão de clientes
-@socketio.on('disconnect')
-def handle_disconnect():
-    logger.info(f"Cliente desconectado: {request.sid}")
-
-# Evento para processar dados enviados pelo cliente
-@socketio.on('process_data')
+# Endpoint para processar áudio e vídeo
+@app.route('/process', methods=['POST'])
 @handle_errors
-def handle_process_data(data):
-    global chat_context
-    use_image = False
+def process():
+    
+    if 'video' in request.files:
+        video_file = request.files['video']
+        video_file.save('captured_images/captured_image.jpg')
+        logger.info("Imagem salva direto do navegador.")
+    
+    if 'audio' in request.files:
 
-    if 'video' in data:
-        video_data = data['video']
-        try:
-            # Decodifica a imagem base64
-            header, encoded = video_data.split(',', 1)
-            video_bytes = base64.b64decode(encoded)
-            with open('captured_images/captured_image.jpg', 'wb') as f:
-                f.write(video_bytes)
-            logger.info("Imagem salva direto do navegador.")
-            use_image = True
-        except Exception as e:
-            logger.error(f"Erro ao salvar a imagem: {e}")
-            emit("error", {"error": "Erro ao processar a imagem."})
-            return
+        audio_file = request.files['audio']
+        audio_bytes = audio_file.read()
+         # Transcreve o áudio usando Deepgram
+        transcript = transcribe_audio(audio_bytes, mimetype='audio/wav', language='pt-BR')
+        if not transcript:
+            logger.error("Erro na transcrição de áudio.")
+            return jsonify({"error": "Erro na transcrição de áudio"}), 500
+        logger.info(f"Texto transcrito: {transcript}")
 
-    if 'audio' in data:
-        audio_data = data['audio']
-        try:
-            # Decodifica o áudio base64
-            header, encoded = audio_data.split(',', 1)
-            audio_bytes = base64.b64decode(encoded)
-            # Transcreve o áudio usando Deepgram
-            transcript = transcribe_audio(audio_bytes, mimetype='audio/wav', language='pt-BR')
-            if not transcript:
-                logger.error("Erro na transcrição de áudio.")
-                emit("error", {"error": "Erro na transcrição de áudio"})
-                return
-            logger.info(f"Texto transcrito: {transcript}")
-
-            chat_context.append({"role": "user", "content": transcript})
-
-            # Verifica palavras-chave para utilizar a visão
-            keywords = ["ver", "olhar", "foto", "câmera", "imagem", "cam", "ler", "visão", "cena", "picture"]
-            use_image = any(keyword in transcript.lower() for keyword in keywords)
-
-        except Exception as e:
-            logger.error(f"Erro ao processar áudio: {e}")
-            emit("error", {"error": "Erro ao processar áudio."})
-            return
-
-    elif 'text' in data:
-        text = data['text']
-        logger.info(f"Texto recebido: {text}")
-        chat_context.append({"role": "user", "content": text})
+        chat_context.append({"role": "user", "content": transcript})
 
         # Verifica palavras-chave para utilizar a visão
         keywords = ["ver", "olhar", "foto", "câmera", "imagem", "cam", "ler", "visão", "cena", "picture"]
-        use_image = any(keyword in text.lower() for keyword in keywords)
+        use_image = any(keyword in transcript.lower() for keyword in keywords)
 
+    elif 'text' in request.form:  # Verifica se há texto na requisição (sem arquivos)
+        text = request.form['text']
+        logger.info(f"Texto recebido: {text}")
+        chat_context.append({"role": "user", "content": text})
+        
+        # Verifica palavras-chave para utilizar a visão
+        keywords = ["ver", "olhar", "foto", "câmera", "imagem", "cam", "ler", "visão", "cena", "picture"]
+        use_image = any(keyword in text.lower() for keyword in keywords)
+    
     else:
         logger.warning("Requisição inválida: nem áudio, nem texto.")
-        emit("error", {"error": "Requisição inválida."})
-        return
+        return jsonify({"error": "Requisição inválida"}), 400
+    
+
+        
+
 
     # Define as funções que o ChatGPT pode chamar
     tools = [
@@ -257,7 +223,7 @@ def handle_process_data(data):
             function_name = tool_call.function.name
             function_args = json.loads(tool_call.function.arguments)
 
-            if function_name == "use_camera" and use_image:
+            if function_name == "use_camera": # or use_image:
                 reply = None
                 # Converte a imagem para base64
                 with open('captured_images/captured_image.jpg', 'rb') as img_file:
@@ -274,7 +240,7 @@ def handle_process_data(data):
                     ],
                 })
                 logger.info("Imagem incluída no chat.")
-
+            
             elif function_name == "websearch":
                 reply = None
                 function_response = websearch(query=function_args.get("query"))
@@ -290,7 +256,9 @@ def handle_process_data(data):
                 reply = "Não foi possível processar a solicitação."
                 chat_context.append({"role": "assistant", "content": reply})
                 logger.warning(f"Função chamada não está disponível: {function_name}")
-
+        
+            
+            #a msg nao esta indo quando usa o texto, todo
             # Obtém a resposta final do ChatGPT após a função ser chamada
             second_response = client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -299,7 +267,7 @@ def handle_process_data(data):
             reply = second_response.choices[0].message.content if hasattr(second_response.choices[0].message, 'content') else 'Erro ao obter resposta do assistente.'
             chat_context.append({"role": "assistant", "content": reply})
             logger.info(f"Resposta do ChatGPT após chamada de função: {reply}")
-
+        
         else:
             reply = response_message.content if hasattr(response_message, 'content') else 'Erro ao obter resposta do assistente.'
             chat_context.append({"role": "assistant", "content": reply})
@@ -307,18 +275,15 @@ def handle_process_data(data):
 
     except Exception as e:
         logger.error(f"Erro ao chamar a API do ChatGPT: {e}")
-        emit("error", {"error": "Erro ao gerar resposta com ChatGPT"})
-        return
+        return jsonify({"error": "Erro ao gerar resposta com ChatGPT"}), 500
 
     # Sintetiza a resposta em áudio usando a API de TTS da OpenAI
     tts_audio = text_to_speech(reply) if reply else None
     if not tts_audio:
         logger.error("Erro ao gerar áudio com a API de TTS.")
-        emit("error", {"error": "Erro ao gerar áudio"})
-        return
+        return jsonify({"error": "Erro ao gerar áudio"}), 500
     elif not reply:
-        emit("error", {"error": "Nenhuma resposta gerada"})
-        return
+        return jsonify({"error": "Nenhuma resposta gerada"}), 500
 
     # Prepara a resposta
     response_data = {
@@ -330,11 +295,9 @@ def handle_process_data(data):
     response_data["audio"] = encoded_audio
     logger.info("Áudio sintetizado incluído na resposta.")
 
-    # Envia a resposta de volta ao cliente via WebSocket
-    emit("response", response_data)
+    return jsonify(response_data)
 
 if __name__ == '__main__':
     if not os.path.exists('captured_images'):
         os.makedirs('captured_images')
-    socketio.run(app, host='192.168.0.21', port=5000, debug=True, certfile='cert.pem', keyfile='key.pem')
-    
+    app.run(host='192.168.0.21', port=5000, debug=False, ssl_context=('cert.pem', 'key.pem'))
